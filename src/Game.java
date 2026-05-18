@@ -6,79 +6,125 @@ public class Game {
 
         Scanner sc = new Scanner(System.in);
 
-        Deck deck = new Deck();
-        deck.shuffle();
+        while (true) {
 
-        Player user = new Player("You");
-        Player computer = new Player("Computer");
+            // =========================
+            // SETUP NEW GAME
+            // =========================
+            Deck deck = new Deck();
+            deck.shuffle();
 
-        ArrayList<card> table = new ArrayList<>();
+            Player user = new Player("You");
+            Player computer = new Player("Computer");
 
-        // deal 2 cards
-        for (int i = 0; i < 2; i++) {
-            user.addCard(deck.drawCard());
-            computer.addCard(deck.drawCard());
-        }
+            ArrayList<card> table = new ArrayList<>();
 
-        // show player cards
-        user.showHand();
+            // =========================
+            // DEAL CARDS
+            // =========================
+            for (int i = 0; i < 2; i++) {
+                user.addCard(deck.drawCard());
+                computer.addCard(deck.drawCard());
+            }
 
-        // first 2 table cards
-        for (int i = 0; i < 2; i++) {
-            table.add(deck.drawCard());
-        }
+            // show player cards
+            System.out.println("\nYour cards:");
+            user.showHand();
 
-        System.out.println("\nTable:");
-        for (card c : table) {
-            System.out.println(c.getCardName());
-        }
+            // first 2 community cards
+            for (int i = 0; i < 2; i++) {
+                table.add(deck.drawCard());
+            }
 
-        // grow table to 5 cards
-        while (table.size() < 5) {
+            System.out.println("\nTable:");
+            for (card c : table) {
+                System.out.println(c.getCardName());
+            }
 
-            System.out.println("\nContinue? (yes/no)");
+            // =========================
+            // ADD COMMUNITY CARDS
+            // =========================
+            while (table.size() < 5) {
+
+                System.out.println("\nDo you want to continue? (yes/no)");
+                String choice = sc.nextLine();
+
+                if (choice.equals("yes")) {
+                    table.add(deck.drawCard());
+
+                    System.out.println("\nTable updated:");
+                    for (card c : table) {
+                        System.out.println(c.getCardName());
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            // =========================
+            // COMBINE CARDS
+            // =========================
+            ArrayList<card> userCards = new ArrayList<>(user.getHand());
+            ArrayList<card> compCards = new ArrayList<>(computer.getHand());
+
+            userCards.addAll(table);
+            compCards.addAll(table);
+
+            // =========================
+            // EVALUATE
+            // =========================
+            Result r1 = Evaluater.evaluate(userCards);
+            Result r2 = Evaluater.evaluate(compCards);
+
+            // =========================
+            // COMPARE
+            // =========================
+            System.out.println();
+
+            if (r1.rank > r2.rank) {
+                System.out.println("You Win!");
+            }
+            else if (r2.rank > r1.rank) {
+                System.out.println("Computer Wins!");
+            }
+            else {
+                boolean decided = false;
+
+                for (int i = 0; i < Math.min(r1.values.size(), r2.values.size()); i++) {
+
+                    if (r1.values.get(i) > r2.values.get(i)) {
+                        System.out.println("You Win!");
+                        decided = true;
+                        break;
+                    }
+
+                    if (r2.values.get(i) > r1.values.get(i)) {
+                        System.out.println("Computer Wins!");
+                        decided = true;
+                        break;
+                    }
+                }
+
+                if (!decided) {
+                    System.out.println("Draw!");
+                }
+            }
+
+            // =========================
+            // REPLAY MENU
+            // =========================
+            System.out.println("\nPlay again? (yes / no / quit)");
             String choice = sc.nextLine();
 
             if (choice.equals("yes")) {
-                table.add(deck.drawCard());
-
-                System.out.println("\nTable:");
-                for (card c : table) {
-                    System.out.println(c.getCardName());
-                }
-            } else {
+                continue;
+            }
+            else {
+                System.out.println("Thanks for playing!");
                 break;
             }
         }
 
-        // combine cards
-        ArrayList<card> userCards = new ArrayList<>(user.getHand());
-        ArrayList<card> compCards = new ArrayList<>(computer.getHand());
-
-        userCards.addAll(table);
-        compCards.addAll(table);
-
-        // evaluate
-        Result r1 = Evaluater.evaluate(userCards);
-        Result r2 = Evaluater.evaluate(compCards);
-
-        // compare
-        if (r1.rank > r2.rank) {
-            System.out.println("\nYou Win!");
-        } else if (r2.rank > r1.rank) {
-            System.out.println("\nComputer Wins!");
-        } else {
-            for (int i = 0; i < Math.min(r1.values.size(), r2.values.size()); i++) {
-                if (r1.values.get(i) > r2.values.get(i)) {
-                    System.out.println("\nYou Win!");
-                    return;
-                }
-                if (r2.values.get(i) > r1.values.get(i)) {
-                    System.out.println("\nComputer Wins!");
-                    return;
-                }
-            }
-            System.out.println("\nDraw!");
-        }
+        sc.close();
     }
 }
