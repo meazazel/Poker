@@ -7,23 +7,24 @@ public class card {
         this.value = value;
     }
 
-    public int getValue() {
-        return value;
-    }
-
     public String getSuit() {
         return suit;
     }
 
-    public String getCardName() {
+    public int getValue() {
+        return value;
+    }
+
+    public String getImageName() {
+
         String v;
 
-        if (value == 14) v = "Ace";
-        else if (value == 13) v = "King";
-        else if (value == 12) v = "Queen";
-        else if (value == 11) v = "Jack";
+        if (value == 1) v = "ace";
+        else if (value == 11) v = "jack";
+        else if (value == 12) v = "queen";
+        else if (value == 13) v = "king";
         else v = String.valueOf(value);
 
-        return v + " of " + suit;
+        return v + "_of_" + suit.toLowerCase() + ".png";
     }
 }
