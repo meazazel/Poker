@@ -1,130 +1,261 @@
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.image.*;
+import javafx.scene.layout.*;
+import javafx.stage.Stage;
+import javafx.scene.control.*;
+import javafx.geometry.*;
+import javafx.scene.image.Image;
+
 import java.util.*;
 
-public class Game {
+public class Game extends Application {
 
-    public static void main(String[] args) {
+    Deck deck;
+    Player user;
+    Player computer;
+    ArrayList<card> table;
 
-        Scanner sc = new Scanner(System.in);
+    int stage = 0;
+    boolean showdown = false;
 
-        while (true) {
+    HBox compBox = new HBox(12);
+    HBox tableBox = new HBox(12);
+    HBox userBox = new HBox(12);
 
-            // =========================
-            // SETUP NEW GAME
-            // =========================
-            Deck deck = new Deck();
-            deck.shuffle();
+    Button nextBtn = new Button("NEXT");
+    Button evalBtn = new Button("SHOWDOWN");
+    Button restartBtn = new Button("RESTART");
 
-            Player user = new Player("You");
-            Player computer = new Player("Computer");
+    Label status = new Label("POKER GAME");
+    Label resultLabel = new Label("");
 
-            ArrayList<card> table = new ArrayList<>();
+    BorderPane root = new BorderPane();
 
-            // =========================
-            // DEAL CARDS
-            // =========================
-            for (int i = 0; i < 2; i++) {
-                user.addCard(deck.drawCard());
-                computer.addCard(deck.drawCard());
-            }
+    @Override
+    public void start(Stage stageWindow) {
 
-            // show player cards
-            System.out.println("\nYour cards:");
-            user.showHand();
 
-            // first 2 community cards
-            for (int i = 0; i < 2; i++) {
-                table.add(deck.drawCard());
-            }
+        startGame();
 
-            System.out.println("\nTable:");
-            for (card c : table) {
-                System.out.println(c.getCardName());
-            }
+        root.setStyle("-fx-background-color: radial-gradient(center 50% 50%, radius 80%, #0f6b45, #063a24);");
 
-            // =========================
-            // ADD COMMUNITY CARDS
-            // =========================
-            while (table.size() < 5) {
+        VBox top = new VBox(10, compBox);
+        top.setAlignment(Pos.CENTER);
 
-                System.out.println("\nDo you want to continue? (yes/no)");
-                String choice = sc.nextLine();
+        VBox center = new VBox(10, status, tableBox, resultLabel);
+        center.setAlignment(Pos.CENTER);
 
-                if (choice.equals("yes")) {
-                    table.add(deck.drawCard());
+        VBox bottom = new VBox(15, userBox, buttons());
+        bottom.setAlignment(Pos.CENTER);
 
-                    System.out.println("\nTable updated:");
-                    for (card c : table) {
-                        System.out.println(c.getCardName());
-                    }
-                } else {
-                    break;
-                }
-            }
+        root.setTop(top);
+        root.setCenter(center);
+        root.setBottom(bottom);
 
-            // =========================
-            // COMBINE CARDS
-            // =========================
-            ArrayList<card> userCards = new ArrayList<>(user.getHand());
-            ArrayList<card> compCards = new ArrayList<>(computer.getHand());
+        nextBtn.setOnAction(e -> nextMove());
+        evalBtn.setOnAction(e -> showResult());
+        restartBtn.setOnAction(e -> startGame());
 
-            userCards.addAll(table);
-            compCards.addAll(table);
+        Scene scene = new Scene(root, 1200, 750);
+        stageWindow.setScene(scene);
+        stageWindow.setTitle("Poker Game");
+        stageWindow.getIcons().add(new Image("playing-cards.png"));
+        stageWindow.show();
 
-            // =========================
-            // EVALUATE
-            // =========================
-            Result r1 = Evaluater.evaluate(userCards);
-            Result r2 = Evaluater.evaluate(compCards);
+        updateUI();
+    }
 
-            // =========================
-            // COMPARE
-            // =========================
-            System.out.println();
+    // start game
+    void startGame() {
 
-            if (r1.rank > r2.rank) {
-                System.out.println("You Win!");
-            }
-            else if (r2.rank > r1.rank) {
-                System.out.println("Computer Wins!");
-            }
-            else {
-                boolean decided = false;
+        deck = new Deck();
+        deck.shuffle();
 
-                for (int i = 0; i < Math.min(r1.values.size(), r2.values.size()); i++) {
+        user = new Player("You");
+        computer = new Player("AI");
+        table = new ArrayList<>();
 
-                    if (r1.values.get(i) > r2.values.get(i)) {
-                        System.out.println("You Win!");
-                        decided = true;
-                        break;
-                    }
+        stage = 0;
+        showdown = false;
+        resultLabel.setText("");
 
-                    if (r2.values.get(i) > r1.values.get(i)) {
-                        System.out.println("Computer Wins!");
-                        decided = true;
-                        break;
-                    }
-                }
+        // 2 cards each
+        for (int i = 0; i < 2; i++) {
+            user.addCard(deck.drawCard());
+            computer.addCard(deck.drawCard());
+        }
 
-                if (!decided) {
-                    System.out.println("Draw!");
-                }
-            }
+        // FLOP (3 cards)
+        for (int i = 0; i < 3; i++) {
+            table.add(deck.drawCard());
+        }
 
-            // =========================
-            // REPLAY MENU
-            // =========================
-            System.out.println("\nPlay again? (yes / no / quit)");
-            String choice = sc.nextLine();
+        status.setText("FLOP");
+        updateUI();
+    }
 
-            if (choice.equals("yes")) {
-                continue;
-            }
-            else {
-                System.out.println("Thanks for playing!");
-                break;
+    // floww
+
+    void nextMove() {
+
+        if (table.size() < 4) {
+            table.add(deck.drawCard());
+            status.setText("TURN");
+        }
+        else if (table.size() < 5) {
+            table.add(deck.drawCard());
+            status.setText("RIVER");
+        }
+        else {
+            status.setText("READY FOR SHOWDOWN");
+        }
+
+        updateUI();
+    }
+
+
+    void updateUI() {
+
+        compBox.getChildren().clear();
+        tableBox.getChildren().clear();
+        userBox.getChildren().clear();
+
+        compBox.setAlignment(Pos.CENTER);
+        tableBox.setAlignment(Pos.CENTER);
+        userBox.setAlignment(Pos.CENTER);
+
+        // computer cards
+        for (card c : computer.getHand()) {
+
+            if (showdown) {
+                compBox.getChildren().add(createCard(c));
+            } else {
+                compBox.getChildren().add(createBackCard());
             }
         }
 
-        sc.close();
+        // table cards
+        for (card c : table) {
+            tableBox.getChildren().add(createCard(c));
+        }
+
+        // user cards
+        for (card c : user.getHand()) {
+            userBox.getChildren().add(createCard(c));
+        }
+    }
+
+    // imaage
+    ImageView createCard(card c) {
+
+        String path = System.getProperty("user.dir") + "/png/" + c.getImageName();
+
+        Image img = new Image("file:" + path, true);
+        ImageView v = new ImageView(img);
+
+        v.setFitWidth(100);
+        v.setFitHeight(140);
+        v.setPreserveRatio(true);
+
+        return v;
+    }
+
+    ImageView createBackCard() {
+
+        String path = System.getProperty("user.dir") + "/png/back.png";
+
+        Image img = new Image("file:" + path, true);
+        ImageView v = new ImageView(img);
+
+        v.setFitWidth(100);
+        v.setFitHeight(140);
+        v.setPreserveRatio(true);
+
+        return v;
+    }
+
+    //result using the showdown button
+    void showResult() {
+
+        if (table.size() < 5) {
+            resultLabel.setText("Finish community cards first!");
+            return;
+        }
+
+        showdown = true;
+        updateUI();
+
+        ArrayList<card> u = new ArrayList<>(user.getHand());
+        ArrayList<card> c = new ArrayList<>(computer.getHand());
+
+        u.addAll(table);
+        c.addAll(table);
+
+        Result r1 = Evaluater.evaluate(u);
+        Result r2 = Evaluater.evaluate(c);
+
+        String msg;
+
+        if (r1.rank > r2.rank) {
+            msg = "YOU WIN\n" + explain(r1.rank, r2.rank, "Player wins with stronger hand");
+        }
+        else if (r2.rank > r1.rank) {
+            msg = "AI WINS\n" + explain(r1.rank, r2.rank, "AI wins with stronger hand");
+        }
+        else {
+            msg = "DRAW\nBoth hands equal strength";
+        }
+
+        resultLabel.setText(msg);
+        resultLabel.setStyle(
+                "-fx-text-fill: gold;" +
+                        "-fx-font-size: 20px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-color: rgba(0,0,0,0.4);" +
+                        "-fx-padding: 10;"
+        );
+    }
+
+    // why they win( explanation)
+    String explain(int r1, int r2, String base) {
+
+        String hand =
+                r1 >= 7 ? "Four of a Kind / Full House level" :
+                        r1 == 5 ? "Flush level" :
+                                r1 == 4 ? "Straight level" :
+                                        r1 == 3 ? "Three of a Kind level" :
+                                                r1 == 1 ? "Pair level" :
+                                                        "High Card";
+
+        return base + "\nWinning hand: " + hand;
+    }
+
+
+    HBox buttons() {
+
+        style(nextBtn, "#1e90ff");
+        style(evalBtn, "#ffcc00");
+        style(restartBtn, "#ff4444");
+
+        HBox box = new HBox(15, nextBtn, evalBtn, restartBtn);
+        box.setAlignment(Pos.CENTER);
+        return box;
+    }
+
+    void style(Button b, String color) {
+
+        b.setStyle(
+                "-fx-background-color: " + color + ";" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 16px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 10 25 10 25;" +
+                        "-fx-background-radius: 20;"
+        );
+    }
+
+    public static void main(String[] args) {
+        launch(args);
     }
 }
