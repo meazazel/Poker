@@ -201,7 +201,7 @@ public class Game extends Application {
             msg = "YOU WIN\n" + explain(r1.rank, r2.rank, "Player wins with stronger hand");
         }
         else if (r2.rank > r1.rank) {
-            msg = "AI WINS\n" + explain(r1.rank, r2.rank, "AI wins with stronger hand");
+            msg = "Computer WINS\n" + explain(r1.rank, r2.rank, "Computer wins with stronger hand");
         }
         else {
             msg = "DRAW\nBoth hands equal strength";
